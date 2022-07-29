@@ -36,6 +36,9 @@ void withHotreload(
   /// The log level to use when calling `onHotReloadLog`.
   /// By default logging is turned off.
   logging.Level logLevel = logging.Level.OFF,
+
+  /// File changes within this time frame only trigger a single hot reload
+  Duration debounceInterval = const Duration(seconds: 1),
 }) async {
   /// Current server instance
   HttpServer? runningServer;
@@ -73,21 +76,24 @@ void withHotreload(
     /// Shut down existing server
     await runningServer?.close(force: true);
 
+    /// Create a new server
+    runningServer = await create();
+
     /// Report about reloading
     if (willReplaceServer) {
       await onReloaded!.call();
     }
-
-    /// Create a new server
-    runningServer = await create();
   };
 
   try {
     /// Register the server reload mechanism to the generic HotReloader.
     /// It will throw an error if reloading is not available.
-    await HotReloader.create(onAfterReload: (ctx) {
-      obtainNewServer(serverFactory);
-    });
+    await HotReloader.create(
+      onAfterReload: (ctx) {
+        obtainNewServer(serverFactory);
+      },
+      debounceInterval: debounceInterval,
+    );
 
     /// Hot-reload is available
     await onHotReloadAvailable.call();
