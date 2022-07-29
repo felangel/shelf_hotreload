@@ -73,13 +73,13 @@ void withHotreload(
     /// Shut down existing server
     await runningServer?.close(force: true);
 
+    /// Create a new server
+    runningServer = await create();
+
     /// Report about reloading
     if (willReplaceServer) {
       await onReloaded!.call();
     }
-
-    /// Create a new server
-    runningServer = await create();
   };
 
   try {
